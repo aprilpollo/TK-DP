@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-frontend
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Release.Name }}-frontend
+spec:
+  replicas: {{ .Values.replicas.frontend }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-frontend
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.registry }}/{{ .Values.frontend.image }}:{{ .Values.frontend.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.service.frontend.targetPort }}
+          volumeMounts:
+            - name: service-config
+              mountPath: /usr/share/nginx/html/config.json
+              subPath: config.json
+          resources:
+            {{- toYaml .Values.resources.frontend | nindent 12 }}
+      volumes:
+        - name: service-config
+          configMap:
+            name: task-manager-web-config

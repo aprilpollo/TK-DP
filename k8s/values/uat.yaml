@@ -4,7 +4,11 @@ namespace: aprilpollo
 registry: docker.io
 
 backend:
-  image: aprilpollo/task-manager
+  image: aprilpollo/task-manager-api
+  tag: latest
+
+frontend:
+  image: aprilpollo/task-manager-web
   tag: latest
 
 redis:
@@ -19,6 +23,14 @@ resources:
   backend:
     requests:
       memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+  frontend:
+    requests:
+      memory: "128Mi"
       cpu: "100m"
     limits:
       memory: "512Mi"
@@ -42,6 +54,7 @@ resources:
 
 replicas:
   backend: 1
+  frontend: 1
   redis: 1
   postgres: 1
 
@@ -49,6 +62,10 @@ service:
   backend:
     port: 8080
     targetPort: 8080
+
+  frontend:
+    port: 80
+    targetPort: 80
 
   redis:
     port: 6379
