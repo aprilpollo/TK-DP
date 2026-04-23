@@ -1,0 +1,11 @@
+{{- if .Values.backend.envConfigMap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: task-manager-env
+  namespace: {{ .Values.namespace }}
+data:
+  {{- range $key, $value := .Values.backend.envConfigMap }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,59 @@
+appVersion: "1.0.0"
+namespace: aprilpollo
+
+registry: docker.io
+
+backend:
+  image: aprilpollo/task-manager
+  tag: latest
+
+redis:
+  image: redis
+  tag: 7.2-alpine
+
+postgres:
+  image: postgres
+  tag: 15-alpine
+
+resources:
+  backend:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+  redis:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+  postgres:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+replicas:
+  backend: 1
+  redis: 1
+  postgres: 1
+
+service:
+  backend:
+    port: 8080
+    targetPort: 8080
+
+  redis:
+    port: 6379
+    targetPort: 6379
+
+  postgres:
+    port: 5432
+    targetPort: 5432
