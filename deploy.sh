@@ -261,11 +261,51 @@ shell_redis() {
 # ============================================================
 # Cleanup
 # ============================================================
+clean_postgres() {
+  print_header "Clean PostgreSQL Data (Fresh Install)"
+  print_warning "This will DELETE ALL PostgreSQL data in namespace: $NAMESPACE"
+  print_warning "All data will be permanently lost and cannot be recovered!"
+  read -rp "Type 'yes' to confirm: " confirm
+  confirm=$(echo "$confirm" | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]')
+
+  if [ "$confirm" != "yes" ]; then
+    print_status "Operation cancelled"
+    return
+  fi
+
+  local release_name="task-manager"
+  local pvc_name="${release_name}-postgres-pvc"
+  local chart_dir="k8s"
+  local values_file="k8s/values/uat.yaml"
+
+  print_status "Scaling down backend to prevent connection errors..."
+  kubectl scale deployment/${release_name}-backend -n "$NAMESPACE" --replicas=0
+
+  print_status "Scaling down postgres deployment..."
+  kubectl scale deployment/${release_name}-postgres -n "$NAMESPACE" --replicas=0
+  kubectl wait --for=delete pod -l app=${release_name}-postgres -n "$NAMESPACE" --timeout=60s 2>/dev/null || true
+
+  print_status "Deleting PostgreSQL PersistentVolumeClaim: $pvc_name"
+  kubectl delete pvc "$pvc_name" -n "$NAMESPACE" --wait=true
+
+  print_status "Redeploying to recreate fresh database..."
+  helm upgrade --install "$release_name" "$chart_dir" \
+    --namespace "$NAMESPACE" \
+    --values "$values_file" \
+    --wait
+
+  print_success "PostgreSQL data cleaned successfully. Fresh database initialized."
+  echo ""
+  print_status "Pods status:"
+  kubectl get pods -n "$NAMESPACE"
+}
+
 delete_all() {
   print_header "Deleting All Resources"
   print_warning "This will delete all resources in namespace: $NAMESPACE"
-  read -p "Are you sure? (yes/no): " confirm
-  
+  read -rp "Are you sure? (yes/no): " confirm
+  confirm=$(echo "$confirm" | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]')
+
   if [ "$confirm" == "yes" ]; then
     helm uninstall task-manager -n "$NAMESPACE" 2>/dev/null || true
     kubectl delete all --all -n "$NAMESPACE"
@@ -322,6 +362,7 @@ help() {
   printf "  shell-redis                Open Redis CLI\n\n"
 
   printf "${YELLOW}Cleanup:${NC}\n"
+  printf "  clean-postgres             Delete all PostgreSQL data (fresh install)\n"
   printf "  delete-all                 Delete all resources (with confirmation)\n\n"
 
   printf "${YELLOW}Environment Variables:${NC}\n"
@@ -420,6 +461,9 @@ case "${1:-help}" in
         ;;
     
     # Cleanup
+    clean-postgres)
+        clean_postgres
+        ;;
     delete-all)
         delete_all
         ;;

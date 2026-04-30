@@ -5,11 +5,11 @@ registry: docker.io
 
 backend:
   image: aprilpollo/task-manager-api
-  tag: latest
+  tag: 985fff3
 
 frontend:
   image: aprilpollo/task-manager-web
-  tag: latest
+  tag: f4c00bf
 
 redis:
   image: redis
